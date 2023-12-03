@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
 import mongoose from 'mongoose';
 import config from '../../config';
@@ -38,9 +39,9 @@ const createStudentIntoDB = async (password: string, payload: TStudent) => {
     if (newUser.length === 0) {
       throw new AppError(httpStatus.BAD_REQUEST, 'Failed to create user');
     }
-    // set id , _id as user
+
     payload.id = newUser[0].id;
-    payload.user = newUser[0]._id; //reference _id
+    payload.user = newUser[0]._id;
 
     const newStudent = await Student.create([payload], { session });
     if (newStudent.length === 0) {

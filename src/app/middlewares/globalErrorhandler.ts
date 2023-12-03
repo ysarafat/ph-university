@@ -3,8 +3,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ErrorRequestHandler } from 'express';
-import { ZodError, ZodIssue } from 'zod';
+import { ZodError } from 'zod';
 import config from '../config';
+import { handleCastError } from '../errors/handleCastError';
+import { handleDuplicateError } from '../errors/handleDuplicateError';
+import { handleValidationError } from '../errors/handleValidationError';
+import { handleZodError } from '../errors/handleZodError';
 import { TErrorSources } from '../interface/error';
 
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
@@ -18,27 +22,31 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     },
   ];
 
-  const handleZodError = (err: ZodError) => {
-    const statusCode = 400;
-    const errorSources: TErrorSources = err.issues.map((issue: ZodIssue) => {
-      return {
-        path: issue?.path[issue.path.length - 1],
-        message: issue.message,
-      };
-    });
-    return {
-      statusCode,
-      message: 'Validation error',
-      errorSources,
-    };
-  };
-
+  // zod validation error
   if (err instanceof ZodError) {
     const formatZodError = handleZodError(err);
     statusCode = formatZodError?.statusCode;
     message = formatZodError?.message;
     errorSources = formatZodError?.errorSources;
+  } else if (err?.name === 'ValidationError') {
+    const mongooseError = handleValidationError(err);
+    statusCode = mongooseError?.statusCode;
+    message = mongooseError?.message;
+    errorSources = mongooseError?.errorSources;
+  } else if (err?.name === 'CastError') {
+    const mongooseError = handleCastError(err);
+    statusCode = mongooseError?.statusCode;
+    message = mongooseError?.message;
+    errorSources = mongooseError?.errorSources;
+  } else if (err?.code === 11000) {
+    const mongooseError = handleDuplicateError(err);
+    statusCode = mongooseError?.statusCode;
+    message = mongooseError?.message;
+    errorSources = mongooseError?.errorSources;
   }
+
+  // mongoose error
+
   return res.status(statusCode).json({
     success: false,
     message,

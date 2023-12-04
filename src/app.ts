@@ -14,15 +14,11 @@ const app: Application = express();
 app.use(express.json());
 app.use(cors());
 
+app.get('/', async (req: Request, res: Response) => {
+  Promise.reject();
+});
 // application routes
 app.use('/api/v1', router);
-
-const test = (req: Request, res: Response) => {
-  const a = 10;
-  res.send(a);
-};
-
-app.get('/', test);
 
 app.use(globalErrorHandler);
 
